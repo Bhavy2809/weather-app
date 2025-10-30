@@ -1,0 +1,5 @@
+# Ignore local config with secrets
+config.json
+
+# Node modules (if someone adds tooling later)
+node_modules/
