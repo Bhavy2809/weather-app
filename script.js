@@ -2,8 +2,14 @@
 // For security, the app now requires a local `config.json` with an `API_KEY` field.
 // This file is ignored by git. A sample is provided at `config.sample.json`.
 let API_KEY = '6b43f7fc5bmsh2db7055f25efe9ep17ee7ejsn7d2dac741d4c';
+let currentLanguage = localStorage.getItem('language') || 'en';
+let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
 const baseUrl = 'https://weatherapi-com.p.rapidapi.com/forecast.json?q=';
+const alertsUrl = 'https://weatherapi-com.p.rapidapi.com/alerts.json?q=';
+const airQualityUrl = 'https://weatherapi-com.p.rapidapi.com/air-quality.json?q=';
+const historyUrl = 'https://weatherapi-com.p.rapidapi.com/history.json?q=';
+
 function makeFetchOptions() {
     return {
         method: 'GET',
@@ -12,6 +18,58 @@ function makeFetchOptions() {
             'x-rapidapi-host': 'weatherapi-com.p.rapidapi.com'
         }
     };
+}
+
+// Initialize service worker for offline support
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
+// Theme management
+function initTheme() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeButton(theme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeButton(next);
+}
+
+// Favorites management
+function toggleFavorite(city) {
+    const index = favorites.indexOf(city);
+    if (index === -1) {
+        favorites.push(city);
+    } else {
+        favorites.splice(index, 1);
+    }
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    updateFavoritesList();
+}
+
+function updateFavoritesList() {
+    const container = document.getElementById('favorites-list');
+    if (!container) return;
+    
+    container.innerHTML = favorites.map(city => `
+        <div class="favorite-item" onclick="getWeather('${city}')">
+            ${city}
+            <span class="favorite-btn" onclick="toggleFavorite('${city}')">★</span>
+        </div>
+    `).join('');
 }
 
 // --- Helpers -------------------------------------------------
