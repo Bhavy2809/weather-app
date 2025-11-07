@@ -185,15 +185,43 @@
         
         /* Table Responsive Container - Dark Background */
         .table-responsive {
-            background-color: #1a1a1a;
+            background-color: transparent;
             border-radius: 8px;
-            padding: 16px;
+            padding: 0;
+        }
+        
+        /* Other Cities Section - Black Background */
+        .other-cities-section {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
-        [data-theme="light"] .table-responsive {
+        [data-theme="light"] .other-cities-section {
             background-color: #f8f9fa;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .city-input-dark {
+            background-color: #2d2d2d !important;
+            color: #f8f9fa !important;
+            border: 1px solid rgba(255,255,255,0.125) !important;
+        }
+        
+        .city-input-dark::placeholder {
+            color: #adb5bd !important;
+        }
+        
+        [data-theme="light"] .city-input-dark {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border: 1px solid rgba(0,0,0,0.125) !important;
+        }
+        
+        [data-theme="light"] .city-input-dark::placeholder {
+            color: #6c757d !important;
         }
 
         /* Hourly forecast horizontal list */
@@ -680,27 +708,29 @@
 
             </div>
 
-            <h2 class="display-6 text-center mb-4">Weather of Other Cities</h2>
-            
-            <!-- City Management Section -->
-            <div class="mb-3">
-                <div class="row">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" id="new-city-input" placeholder="Enter city name to add to comparison table">
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-primary" id="add-city-btn">
-                            <i class="fas fa-plus"></i> Add City
-                        </button>
-                        <button class="btn btn-secondary" id="reset-cities-btn" title="Reset to default cities">
-                            <i class="fas fa-undo"></i> Reset
-                        </button>
+            <!-- Weather of Other Cities Section with Dark Background -->
+            <div class="other-cities-section">
+                <h2 class="display-6 text-center mb-4" style="color: var(--text-color);">Weather of Other Cities</h2>
+                
+                <!-- City Management Section -->
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control city-input-dark" id="new-city-input" placeholder="Enter city name to add to comparison table">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary" id="add-city-btn">
+                                <i class="fas fa-plus"></i> Add City
+                            </button>
+                            <button class="btn btn-secondary" id="reset-cities-btn" title="Reset to default cities">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="table-responsive">
-                <table class="table">
+                <div class="table-responsive">
+                    <table class="table">
                     <thead>
                         <tr>
                             <th>City</th>
@@ -716,6 +746,8 @@
                         </tbody>
                 </table>
             </div>
+            </div>
+            <!-- End of Other Cities Section -->
         </main>
     </div>
 
