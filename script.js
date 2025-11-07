@@ -209,7 +209,7 @@ function renderHourlyForecast(result) {
         card.className = 'hour-card';
         card.innerHTML = `
             <div class="hour-time">${time}</div>
-            <img src="${h.condition.icon}" alt="icon" style="height:36px;">
+            <img src="${h.condition.icon}" alt="${h.condition.text}" style="height:36px;width:36px;" onerror="this.style.display='none'">
             <div class="hour-temp">${h.temp_c}°C</div>
         `;
         hourContainer.appendChild(card);
@@ -217,30 +217,194 @@ function renderHourlyForecast(result) {
 }
 
 // --- Map / Radar using Leaflet ---------------------------------
-let map, radarLayer, locationMarker;
+let map, radarLayer, locationMarker, cloudLayer, precipLayer, tempLayer, pressureLayer;
+let weatherLayers = [];
+
+async function getLatestRadarTimestamp() {
+    try {
+        const response = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+        const data = await response.json();
+        if (data.radar && data.radar.past && data.radar.past.length > 0) {
+            // Get the most recent radar timestamp
+            return data.radar.past[data.radar.past.length - 1].path;
+        }
+    } catch (err) {
+        console.warn('Could not fetch RainViewer timestamp:', err);
+    }
+    return null;
+}
+
 function initMap() {
     try {
-        map = L.map('radar-map', { center: [22.5, 80], zoom: 5 });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.error('Leaflet library not loaded yet, retrying in 500ms...');
+            setTimeout(initMap, 500);
+            return;
+        }
+
+        // Check if map container exists
+        const mapContainer = document.getElementById('radar-map');
+        if (!mapContainer) {
+            console.error('Map container #radar-map not found');
+            return;
+        }
+
+        // Prevent re-initialization
+        if (map) {
+            console.log('Map already initialized');
+            return;
+        }
+
+        console.log('Initializing Leaflet map with full-coverage weather visualization...');
+
+        // Initialize map with darker base for better contrast
+        map = L.map('radar-map').setView([20.5937, 78.9629], 5); // Wider view of India
+        
+        // Use DARK base map for maximum color contrast
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
         }).addTo(map);
 
-        // RainViewer radar tiles (public). We use the 'latest' composite layer when available.
-        const radarUrl = 'https://tilecache.rainviewer.com/v2/radar/nowcast/{z}/{x}/{y}.png';
-        radarLayer = L.tileLayer(radarUrl, { opacity: 0.6, attribution: 'rainviewer.com' });
-        radarLayer.addTo(map);
+        // Add country borders and labels on top for clarity
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19,
+            opacity: 0.7
+        }).addTo(map);
+
+        // LAYER 1: Temperature - PRIMARY LAYER (Most Important - Full Coverage)
+        // Color Scale: Purple (Cold) -> Blue -> Green -> Yellow -> Orange -> Red (Hot)
+        tempLayer = L.tileLayer('https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+            attribution: 'OpenWeatherMap - Temperature',
+            opacity: 1.0, // Maximum opacity for complete coverage
+            maxZoom: 19
+        });
+        tempLayer.addTo(map);
+        weatherLayers.push({ name: 'Temperature', layer: tempLayer });
+
+        // LAYER 2: Clouds - White overlay showing cloud coverage
+        // Intensity: Transparent (Clear) -> White (Heavy Clouds)
+        cloudLayer = L.tileLayer('https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+            attribution: 'OpenWeatherMap - Clouds',
+            opacity: 0.6, // Moderate opacity so it doesn't hide temperature
+            maxZoom: 19
+        });
+        cloudLayer.addTo(map);
+        weatherLayers.push({ name: 'Clouds', layer: cloudLayer });
+
+        // LAYER 3: Precipitation - Shows rain/snow
+        // Color Scale: Green (Light Rain) -> Yellow (Moderate) -> Orange -> Red (Heavy Rain)
+        precipLayer = L.tileLayer('https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+            attribution: 'OpenWeatherMap - Precipitation',
+            opacity: 0.8, // High opacity for visibility
+            maxZoom: 19
+        });
+        precipLayer.addTo(map);
+        weatherLayers.push({ name: 'Precipitation', layer: precipLayer });
+
+        // LAYER 4: Wind - Shows wind speed and direction
+        // Color Scale: Light Blue (Low Wind) -> Dark Blue (High Wind)
+        const windLayer = L.tileLayer('https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+            attribution: 'OpenWeatherMap - Wind',
+            opacity: 0.5, // Lower opacity so it doesn't overwhelm
+            maxZoom: 19
+        });
+        // LAYER 5: Radar - Live precipitation radar (when available)
+        // Shows real-time precipitation with high detail
+        getLatestRadarTimestamp().then(radarPath => {
+            if (radarPath) {
+                console.log('✓ Loading live radar with timestamp:', radarPath);
+                const radarUrl = `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/6/1_1.png`;
+                radarLayer = L.tileLayer(radarUrl, { 
+                    opacity: 0.7, // Balanced opacity
+                    attribution: 'RainViewer - Live Radar',
+                    maxZoom: 19
+                });
+                radarLayer.addTo(map);
+                weatherLayers.push({ name: 'Radar', layer: radarLayer });
+                console.log('✓ Live radar layer active');
+            } else {
+                console.log('⚠ No live radar data available at this time');
+            }
+        });
+
+        console.log('✓ Map initialized with 5 weather layers:');
+        console.log('  1. Temperature (Purple->Blue->Green->Yellow->Red): Base layer, always visible');
+        console.log('  2. Clouds (White): Cloud coverage overlay');
+        console.log('  3. Precipitation (Green->Yellow->Red): Active rain/snow areas');
+        console.log('  4. Wind (Blue): Wind speed and direction');
+        console.log('  5. Radar (Cyan/Magenta): Live precipitation radar');
+        
+        // Add click event to get weather at clicked location
+        map.on('click', async function(e) {
+            const lat = e.latlng.lat.toFixed(4);
+            const lon = e.latlng.lng.toFixed(4);
+            console.log(`Map clicked at: ${lat}, ${lon}`);
+            
+            // Show loading indicator at clicked location
+            const clickMarker = L.marker([lat, lon], {
+                icon: L.divIcon({
+                    className: 'click-loading-marker',
+                    html: '<div style="background: #007bff; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; white-space: nowrap;">Loading...</div>',
+                    iconSize: [80, 30]
+                })
+            }).addTo(map);
+            
+            try {
+                // Fetch weather for clicked coordinates
+                await getWeatherByCoords(lat, lon);
+                
+                // Remove loading marker after successful fetch
+                setTimeout(() => {
+                    map.removeLayer(clickMarker);
+                }, 2000);
+                
+                // Scroll to top to show weather details
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                console.error('Error fetching weather for clicked location:', err);
+                map.removeLayer(clickMarker);
+                alert(`Could not fetch weather for this location: ${err.message}`);
+            }
+        });
+        
+        console.log('✓ Map click handler added - click anywhere to get weather!');
+        
+        // Force a redraw
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                console.log('✓ All weather layers should now be visible across the entire map');
+            }
+        }, 100);
+
     } catch (err) {
-        console.warn('Leaflet init failed', err);
+        console.error('Leaflet init failed:', err);
     }
 }
 
 function updateMap(lat, lon) {
-    if (!map) return;
-    map.setView([lat, lon], 8);
-    if (locationMarker) {
-        locationMarker.setLatLng([lat, lon]);
-    } else {
-        locationMarker = L.marker([lat, lon]).addTo(map);
+    if (!map) {
+        console.log('Map not initialized, attempting to initialize...');
+        initMap();
+        // Wait a bit for map to initialize
+        setTimeout(() => updateMap(lat, lon), 500);
+        return;
+    }
+    try {
+        map.setView([lat, lon], 10);
+        if (locationMarker) {
+            locationMarker.setLatLng([lat, lon]);
+        } else {
+            locationMarker = L.marker([lat, lon]).addTo(map);
+        }
+        console.log(`Map updated to: ${lat}, ${lon}`);
+    } catch (err) {
+        console.error('Error updating map:', err);
     }
 }
 
@@ -280,23 +444,65 @@ async function getWeatherByCoords(lat, lon) {
         console.log(`Fetching weather for coordinates: ${lat},${lon}`);
         const result = await fetchWeather(`${lat},${lon}`);
         console.log('Weather data received:', result);
-        renderMainCards(result, `${result.location.name} (Your location)`);
+        
+        // Determine display name
+        let displayName = result.location.name;
+        if (result.location.region && result.location.region !== result.location.name) {
+            displayName += `, ${result.location.region}`;
+        }
+        displayName += ` (${parseFloat(lat).toFixed(2)}, ${parseFloat(lon).toFixed(2)})`;
+        
+        renderMainCards(result, displayName);
         renderHourlyForecast(result);
-        updateMap(lat, lon);
+        updateMap(result.location.lat, result.location.lon);
     } catch (err) {
         console.error('Error fetching weather:', err);
-        alert('Unable to fetch weather for your location. ' + err.message);
+        alert('Unable to fetch weather for this location. ' + err.message);
         document.getElementById('cityName').textContent = 'Location Error';
     }
 }
 
-// --- Table for other cities (unchanged behaviour) ---------------
+// --- Table for other cities with dynamic city management ---------------
+let comparisonCities = JSON.parse(localStorage.getItem('comparisonCities') || '["Lucknow", "Hyderabad", "Pune", "Jaipur"]');
+
+function saveComparisonCities() {
+    localStorage.setItem('comparisonCities', JSON.stringify(comparisonCities));
+}
+
+function addCityToComparison(cityName) {
+    const city = cityName.trim();
+    if (!city) {
+        alert('Please enter a city name');
+        return;
+    }
+    if (comparisonCities.includes(city)) {
+        alert('City already in the list');
+        return;
+    }
+    comparisonCities.push(city);
+    saveComparisonCities();
+    fetchWeatherForOtherCities();
+}
+
+function removeCityFromComparison(cityName) {
+    comparisonCities = comparisonCities.filter(c => c !== cityName);
+    saveComparisonCities();
+    fetchWeatherForOtherCities();
+}
+
+function resetCitiesToDefault() {
+    if (confirm('Reset to default cities (Lucknow, Hyderabad, Pune, Jaipur)?')) {
+        comparisonCities = ['Lucknow', 'Hyderabad', 'Pune', 'Jaipur'];
+        saveComparisonCities();
+        fetchWeatherForOtherCities();
+    }
+}
+
 const fetchWeatherForOtherCities = async () => {
-    const cities = ['Lucknow', 'Hyderabad', 'Pune', 'Jaipur'];
     const tableBody = document.querySelector('.table tbody');
-    tableBody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
     let tableHTML = '';
-    for (const city of cities) {
+    for (const city of comparisonCities) {
         try {
             const result = await fetchWeather(city);
             tableHTML += `
@@ -307,9 +513,24 @@ const fetchWeatherForOtherCities = async () => {
                     <td>${result.current.humidity}</td>
                     <td>${result.current.wind_kph}</td>
                     <td>${result.current.condition.text}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="removeCityFromComparison('${city}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>`;
         } catch (error) {
             console.error(`Could not fetch weather for ${city}`);
+            tableHTML += `
+                <tr>
+                    <th scope="row" class="text-start">${city}</th>
+                    <td colspan="5" class="text-danger">Error loading data</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="removeCityFromComparison('${city}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
         }
     }
     tableBody.innerHTML = tableHTML;
@@ -352,6 +573,23 @@ document.getElementById('use-location').addEventListener('click', () => {
         document.getElementById('cityName').textContent = 'Location Access Denied';
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
 });
+
+// City management event listeners
+document.getElementById('add-city-btn').addEventListener('click', () => {
+    const cityInput = document.getElementById('new-city-input');
+    addCityToComparison(cityInput.value);
+    cityInput.value = '';
+});
+
+document.getElementById('new-city-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        const cityInput = document.getElementById('new-city-input');
+        addCityToComparison(cityInput.value);
+        cityInput.value = '';
+    }
+});
+
+document.getElementById('reset-cities-btn').addEventListener('click', resetCitiesToDefault);
 
 // --- Boot -------------------------------------------------------
 // Hide video if source is missing and fall back to CSS background.
@@ -401,7 +639,12 @@ function showConfigBanner() {
 window.addEventListener('load', async () => {
     await loadConfig();
     await ensureBackgroundVideo();
-    initMap();
+    
+    // Initialize map - give DOM time to be ready
+    setTimeout(() => {
+        console.log('Initializing map...');
+        initMap();
+    }, 1000);
 
     if (!(await ensureApiKeyOrDemo())) {
         return;
