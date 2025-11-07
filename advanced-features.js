@@ -55,12 +55,12 @@ setInterval(updateNetworkInfo, 5000);
 updateNetworkInfo();
 
 // ===================================================================
-// 2. 3D EARTH VIEW WITH THREE.JS + LIVE WEATHER OVERLAY
+// 2. INTERACTIVE 3D EARTH WITH REAL-TIME WEATHER OVERLAY
 // ===================================================================
-let scene, camera, renderer, earth, controls;
+let scene, camera, renderer, earth, controls, atmosphere;
 let earthInitialized = false;
-let weatherMarkers = []; // Store weather markers on globe
-let currentWeatherData = null;
+let weatherMarkers = [];
+let weatherOverlayPoints = [];
 
 function init3DEarth() {
     if (earthInitialized) return;
@@ -78,42 +78,46 @@ function init3DEarth() {
         renderer.setSize(container.offsetWidth, container.offsetHeight);
         renderer.setClearColor(0x000000, 0);
 
-        // Create Earth
+        // Create Earth with visible weather overlay
         const geometry = new THREE.SphereGeometry(1, 64, 64);
-        
-        // Earth texture with temperature overlay
         const textureLoader = new THREE.TextureLoader();
         const material = new THREE.MeshPhongMaterial({
             map: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
             bumpMap: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
             bumpScale: 0.05,
             specularMap: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-water.png'),
-            specular: new THREE.Color('grey')
+            specular: new THREE.Color('grey'),
+            shininess: 10
         });
 
         earth = new THREE.Mesh(geometry, material);
         scene.add(earth);
 
-        // Atmosphere glow
-        const atmosphereGeometry = new THREE.SphereGeometry(1.05, 64, 64);
+        // Create colorful atmosphere glow
+        const atmosphereGeometry = new THREE.SphereGeometry(1.1, 64, 64);
         const atmosphereMaterial = new THREE.MeshBasicMaterial({
             color: 0x4488ff,
             transparent: true,
-            opacity: 0.2,
+            opacity: 0.3,
             side: THREE.BackSide
         });
-        const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+        atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         scene.add(atmosphere);
 
-        // Lighting
+        // Lighting for better visibility
         const ambientLight = new THREE.AmbientLight(0x404040, 2);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(5, 3, 5);
         scene.add(directionalLight);
 
-        // Controls
+        // Point light for dramatic effect
+        const pointLight = new THREE.PointLight(0xffffff, 0.5);
+        pointLight.position.set(-5, 0, 5);
+        scene.add(pointLight);
+
+        // Orbit controls with auto-rotate
         if (typeof THREE.OrbitControls !== 'undefined') {
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -122,9 +126,11 @@ function init3DEarth() {
             controls.enableZoom = true;
             controls.minDistance = 1.5;
             controls.maxDistance = 5;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
         }
 
-        // Click interaction
+        // Click to get weather at any location
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -141,13 +147,14 @@ function init3DEarth() {
                 const lat = Math.asin(point.y / 1) * (180 / Math.PI);
                 const lon = Math.atan2(point.x, point.z) * (180 / Math.PI);
                 
-                console.log(`Clicked on Earth: Lat ${lat.toFixed(2)}, Lon ${lon.toFixed(2)}`);
+                // Add visual marker
+                addInteractiveWeatherMarker(lat, lon, point);
                 
-                // Add a marker at clicked location
-                addWeatherMarker(lat, lon, point);
-                
-                // Fetch weather for this location
+                // Fetch and display weather
                 getWeatherByCoords(lat.toFixed(4), lon.toFixed(4));
+                
+                // Show notification
+                showGlobeNotification(`🌍 Fetching weather for Lat: ${lat.toFixed(2)}°, Lon: ${lon.toFixed(2)}°`);
             }
         });
 
@@ -156,12 +163,17 @@ function init3DEarth() {
             requestAnimationFrame(animate);
             
             if (earth) {
-                earth.rotation.y += 0.001; // Slow rotation
+                earth.rotation.y += 0.0005;
             }
             
-            // Rotate markers with earth
-            weatherMarkers.forEach(marker => {
-                marker.rotation.y += 0.001;
+            if (atmosphere) {
+                atmosphere.rotation.y += 0.0003;
+            }
+            
+            // Pulse weather markers
+            weatherMarkers.forEach((marker, index) => {
+                const scale = 1 + Math.sin(Date.now() * 0.005 + index) * 0.3;
+                marker.scale.set(scale, scale, scale);
             });
             
             if (controls) {
@@ -173,7 +185,7 @@ function init3DEarth() {
 
         animate();
         earthInitialized = true;
-        console.log('✓ 3D Earth view initialized with live weather overlay');
+        console.log('✓ Interactive 3D Earth initialized - Click anywhere to get weather!');
 
         // Handle resize
         window.addEventListener('resize', () => {
@@ -192,57 +204,92 @@ function init3DEarth() {
 // Add weather marker to 3D globe
 function addWeatherMarker(lat, lon, point) {
     // Remove old markers if too many
-    if (weatherMarkers.length > 5) {
+    if (weatherMarkers.length > 10) {
         const oldMarker = weatherMarkers.shift();
         scene.remove(oldMarker);
     }
     
-    // Create marker (small colored sphere)
-    const markerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
+    // Create pulsing marker
+    const markerGeometry = new THREE.SphereGeometry(0.03, 16, 16);
     const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xff0000,
+        color: 0xff6600, // Bright orange
         transparent: true,
-        opacity: 0.8
+        opacity: 0.9
     });
     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
     
     // Position at clicked point
     marker.position.copy(point);
-    marker.position.normalize().multiplyScalar(1.01); // Slightly above surface
+    marker.position.normalize().multiplyScalar(1.02); // Slightly above surface
     
     scene.add(marker);
     weatherMarkers.push(marker);
     
-    console.log(`Added weather marker at Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`);
+    console.log(`✅ Weather marker added at Lat: ${lat.toFixed(2)}°, Lon: ${lon.toFixed(2)}°`);
 }
 
 // Update 3D Earth with current weather data
 function update3DEarthWeather(weatherData) {
-    if (!earthInitialized || !weatherData) return;
+    if (!earthInitialized || !weatherData || !atmosphere) return;
     
-    currentWeatherData = weatherData;
-    
-    // Change atmosphere color based on weather condition
     const condition = weatherData.current.condition.text.toLowerCase();
-    let atmosphereColor = 0x4488ff; // Default blue
+    const temp = weatherData.current.temp_c;
+    let color, opacity;
     
+    // Dynamic atmosphere colors based on weather
     if (condition.includes('rain') || condition.includes('drizzle')) {
-        atmosphereColor = 0x5555ff; // Darker blue for rain
-    } else if (condition.includes('cloud')) {
-        atmosphereColor = 0x888888; // Gray for clouds
-    } else if (condition.includes('clear') || condition.includes('sunny')) {
-        atmosphereColor = 0xffaa00; // Orange for sunny
+        color = 0x0088ff; // Bright blue for rain
+        opacity = 0.5;
     } else if (condition.includes('storm') || condition.includes('thunder')) {
-        atmosphereColor = 0x333388; // Dark purple for storms
+        color = 0x9933ff; // Purple for storms
+        opacity = 0.6;
+    } else if (condition.includes('cloud')) {
+        color = 0xaaaaaa; // Light gray for clouds
+        opacity = 0.4;
+    } else if (condition.includes('snow')) {
+        color = 0xccffff; // Cyan for snow
+        opacity = 0.5;
+    } else if (condition.includes('clear') || condition.includes('sunny')) {
+        color = temp > 25 ? 0xffaa00 : 0xffdd00; // Orange/yellow
+        opacity = 0.3;
+    } else if (condition.includes('fog') || condition.includes('mist')) {
+        color = 0x888888; // Dark gray
+        opacity = 0.5;
+    } else {
+        color = 0x4488ff; // Default blue
+        opacity = 0.3;
     }
     
-    // Find atmosphere mesh and update color
-    scene.children.forEach(child => {
-        if (child.geometry && child.geometry.parameters && child.geometry.parameters.radius === 1.05) {
-            child.material.color.setHex(atmosphereColor);
-            console.log(`Updated atmosphere color based on: ${condition}`);
-        }
-    });
+    atmosphere.material.color.setHex(color);
+    atmosphere.material.opacity = opacity;
+    
+    console.log(`🌍 Globe updated: ${condition} → Color #${color.toString(16)}`);
+}
+
+// Show notification
+function showGlobeNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: #00ff00;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid #00ff00;
+        font-size: 14px;
+        z-index: 10000;
+        box-shadow: 0 4px 6px rgba(0, 255, 0, 0.3);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // ===================================================================

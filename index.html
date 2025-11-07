@@ -761,13 +761,21 @@
 
     <!-- 3D Earth View -->
     <div class="container mt-4">
-        <h2 class="h4 mb-2">🌍 3D Earth View - Live Weather Visualization</h2>
-        <p class="small text-muted">Drag to rotate • Scroll to zoom • Click on any location to get weather</p>
-        <div class="earth-view-container">
+        <h2 class="h4 mb-2">🌍 Interactive 3D Earth - Click Anywhere to Get Weather!</h2>
+        <p class="small text-muted">
+            <strong>🎯 How to use:</strong> 
+            Drag to rotate • Scroll to zoom • <span style="background: #ff6600; color: white; padding: 2px 8px; border-radius: 4px;">Click any location</span> to fetch live weather • 
+            Watch the atmosphere change colors based on current weather conditions
+        </p>
+        <div class="earth-view-container" style="position: relative;">
             <canvas id="earth-canvas"></canvas>
-            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-size: 12px;">
-                <div><strong>🌡️ Temperature Layer Active</strong></div>
-                <div>Blue = Cold | Red = Hot</div>
+            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.9); color: white; padding: 12px; border-radius: 8px; font-size: 12px; border: 1px solid #00ff00;">
+                <div><strong>� Interactive Globe Controls:</strong></div>
+                <div style="margin-top: 5px;">🖱️ Click = Get Weather</div>
+                <div>🌈 Atmosphere = Live Conditions</div>
+                <div style="margin-top: 5px; font-size: 11px; opacity: 0.8;">
+                    🔵 Rain | 🟣 Storms | ⚪ Clouds | 🟡 Sunny | 🔵 Snow
+                </div>
             </div>
         </div>
     </div>
