@@ -1,6 +1,7 @@
 // ===================================================================
 // ADVANCED FEATURES - 5G Immersive Experience
 // ===================================================================
+console.log('🎨 advanced-features.js loaded - 3D Earth & AI Features');
 
 // ===================================================================
 // 1. 5G PERFORMANCE MONITORING

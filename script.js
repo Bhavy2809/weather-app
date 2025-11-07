@@ -2,7 +2,8 @@
 // For security, the app now requires a local `config.json` with an `API_KEY` field.
 // This file is ignored by git. A sample is provided at `config.sample.json`.
 console.log('📦 script.js loaded - Weather App v2.0');
-let API_KEY = '6b43f7fc5bmsh2db7055f25efe9ep17ee7ejsn7d2dac741d4c';
+// NOTE: The config.json file will override this fallback key
+let API_KEY = 'YOUR_RAPIDAPI_KEY_HERE'; // Fallback - will be replaced by config.json
 let currentLanguage = localStorage.getItem('language') || 'en';
 let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
