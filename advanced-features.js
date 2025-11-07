@@ -328,18 +328,49 @@ async function processNaturalQuery() {
     if (activityType) {
         const recommendation = analyzeWeatherForActivity(weatherData, activityType, timeframe);
         
-        // Show detailed recommendation in a modal or alert
+        // Show detailed recommendation in the panel
         showActivityRecommendation(city, activityType, recommendation, weatherData);
     } else {
-        // Standard weather query
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        const response = timeframe === 'tomorrow' 
-            ? `Here's the forecast for ${city} tomorrow!` 
-            : `Here's the current weather in ${city}!`;
-        alert(response);
+        // Standard weather query - show simple result in panel
+        showSimpleWeatherResult(city, weatherData, timeframe);
     }
     
     input.value = '';
+}
+
+// Show simple weather query result
+function showSimpleWeatherResult(city, weatherData, timeframe) {
+    const current = weatherData.current;
+    
+    let htmlContent = `
+        <div class="ai-conditions">
+            <h5 style="margin-bottom: 15px;"><i class="fas fa-cloud-sun"></i> Weather Information for ${city}</h5>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <div><strong>Temperature:</strong> ${current.temp_c}°C</div>
+                <div><strong>Feels Like:</strong> ${current.feelslike_c}°C</div>
+                <div><strong>Condition:</strong> ${current.condition.text}</div>
+                <div><strong>Wind Speed:</strong> ${current.wind_kph} km/h</div>
+                <div><strong>Humidity:</strong> ${current.humidity}%</div>
+                <div><strong>Cloud Cover:</strong> ${current.cloud}%</div>
+            </div>
+        </div>
+        <div style="text-align: center; padding: 20px; font-size: 18px; color: var(--text-color);">
+            ${timeframe === 'tomorrow' ? '📅 Tomorrow\'s forecast loaded!' : '✅ Current weather data loaded!'}
+        </div>
+        <div class="ai-tips">
+            <h5><i class="fas fa-question-circle"></i> Want More Details?</h5>
+            <div class="ai-tip-item">Try asking: "Can I go on a trek in ${city}?"</div>
+            <div class="ai-tip-item">Or ask: "Is it good for a picnic in ${city}?"</div>
+            <div class="ai-tip-item">Or ask: "Beach weather in ${city}?"</div>
+        </div>
+    `;
+    
+    document.getElementById('ai-results-title').textContent = `Weather in ${city}`;
+    document.getElementById('ai-results-content').innerHTML = htmlContent;
+    
+    const panel = document.getElementById('ai-results-panel');
+    panel.classList.add('active');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Analyze weather suitability for activities
@@ -505,55 +536,66 @@ function showActivityRecommendation(city, activityType, recommendation, weatherD
     const activityName = activityNames[activityType] || 'Activity';
     const current = weatherData.current;
 
-    // Create a modal-style message
-    let message = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `🌤️ ${activityName} WEATHER ANALYSIS\n`;
-    message += `📍 Location: ${city}\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    // Build HTML content for the panel
+    let htmlContent = `
+        <div class="ai-verdict ${recommendation.suitable ? 'good' : 'bad'}">
+            ${recommendation.suitable ? '✅ GOOD TO GO!' : '❌ NOT RECOMMENDED'}
+            <div style="font-size: 16px; margin-top: 5px;">Suitability Score: ${recommendation.score}/100</div>
+        </div>
+        
+        <div class="ai-conditions">
+            <h5 style="margin-bottom: 15px;"><i class="fas fa-thermometer-half"></i> Current Conditions in ${city}</h5>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <div><strong>Temperature:</strong> ${current.temp_c}°C</div>
+                <div><strong>Feels Like:</strong> ${current.feelslike_c}°C</div>
+                <div><strong>Condition:</strong> ${current.condition.text}</div>
+                <div><strong>Wind Speed:</strong> ${current.wind_kph} km/h</div>
+                <div><strong>Humidity:</strong> ${current.humidity}%</div>
+                <div><strong>Cloud Cover:</strong> ${current.cloud}%</div>
+            </div>
+        </div>
+    `;
     
-    // Current conditions
-    message += `🌡️ CURRENT CONDITIONS:\n`;
-    message += `   Temperature: ${current.temp_c}°C (Feels like ${current.feelslike_c}°C)\n`;
-    message += `   Condition: ${current.condition.text}\n`;
-    message += `   Wind Speed: ${current.wind_kph} km/h\n`;
-    message += `   Humidity: ${current.humidity}%\n`;
-    message += `   Cloud Cover: ${current.cloud}%\n\n`;
-
-    // Verdict
-    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    if (recommendation.suitable) {
-        message += `✅ VERDICT: GOOD TO GO!\n`;
-        message += `Suitability Score: ${recommendation.score}/100\n`;
-    } else {
-        message += `❌ VERDICT: NOT RECOMMENDED\n`;
-        message += `Suitability Score: ${recommendation.score}/100\n`;
-    }
-    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // Reasons
+    // Add analysis
     if (recommendation.reasons.length > 0) {
-        message += `📋 ANALYSIS:\n`;
+        htmlContent += `
+            <div class="ai-analysis">
+                <h5><i class="fas fa-chart-line"></i> Detailed Analysis</h5>
+        `;
         recommendation.reasons.forEach(reason => {
-            message += `   ${reason}\n`;
+            htmlContent += `<div class="ai-analysis-item">${reason}</div>`;
         });
-        message += `\n`;
+        htmlContent += `</div>`;
     }
-
-    // Tips
-    if (recommendation.tips.length > 0) {
-        message += `💡 TIPS:\n`;
-        recommendation.tips.forEach(tip => {
-            message += `   • ${tip}\n`;
-        });
-    }
-
-    message += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-    // Show in alert (could be enhanced with a custom modal)
-    alert(message);
     
-    // Scroll to weather details
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Add tips
+    if (recommendation.tips.length > 0) {
+        htmlContent += `
+            <div class="ai-tips">
+                <h5 style="margin-bottom: 10px;"><i class="fas fa-lightbulb"></i> Recommendations & Tips</h5>
+        `;
+        recommendation.tips.forEach(tip => {
+            htmlContent += `<div class="ai-tip-item">${tip}</div>`;
+        });
+        htmlContent += `</div>`;
+    }
+    
+    // Update panel content
+    document.getElementById('ai-results-title').textContent = `${activityName} Weather Analysis for ${city}`;
+    document.getElementById('ai-results-content').innerHTML = htmlContent;
+    
+    // Show the panel
+    const panel = document.getElementById('ai-results-panel');
+    panel.classList.add('active');
+    
+    // Scroll to panel
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Close AI results panel
+function closeAIResults() {
+    const panel = document.getElementById('ai-results-panel');
+    panel.classList.remove('active');
 }
 
 // Helper function to get weather with response
@@ -671,3 +713,4 @@ window.toggleTheme = toggleTheme;
 window.startPerformanceMonitoring = startPerformanceMonitoring;
 window.endPerformanceMonitoring = endPerformanceMonitoring;
 window.update3DEarthWeather = update3DEarthWeather;
+window.closeAIResults = closeAIResults;
