@@ -1,6 +1,7 @@
 // ⚠️ IMPORTANT: API key handling
 // For security, the app now requires a local `config.json` with an `API_KEY` field.
 // This file is ignored by git. A sample is provided at `config.sample.json`.
+console.log('📦 script.js loaded - Weather App v2.0');
 let API_KEY = '6b43f7fc5bmsh2db7055f25efe9ep17ee7ejsn7d2dac741d4c';
 let currentLanguage = localStorage.getItem('language') || 'en';
 let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -184,6 +185,7 @@ function updateBackgroundVideo(condition) {
 
 // --- Rendering -------------------------------------------------
 function renderMainCards(result, displayName) {
+    console.log('🎨 Rendering main cards for:', displayName);
     document.getElementById('cityName').textContent = displayName || `${result.location.name}, ${result.location.country}`;
     document.querySelector('#temp').textContent = result.current.temp_c;
     document.querySelector('#weather-icon').src = result.current.condition.icon;
@@ -201,7 +203,10 @@ function renderMainCards(result, displayName) {
     
     // Update 3D Earth with current weather if function exists
     if (typeof update3DEarthWeather === 'function') {
+        console.log('🌍 Updating 3D Earth weather...');
         update3DEarthWeather(result);
+    } else {
+        console.warn('⚠️ update3DEarthWeather function not available');
     }
 }
 
@@ -447,16 +452,19 @@ async function fetchWeather(query) {
 }
 
 async function getWeather(city) {
+    console.log('🔍 getWeather called with city:', city);
     document.getElementById('cityName').textContent = 'Loading...';
     try {
+        console.log('📡 Fetching weather data...');
         const result = await fetchWeather(city);
+        console.log('✅ Weather data received:', result);
         renderMainCards(result, city);
         renderHourlyForecast(result);
         if (result.location && result.location.lat && result.location.lon) {
             updateMap(result.location.lat, result.location.lon);
         }
     } catch (err) {
-        console.error(err);
+        console.error('❌ Error in getWeather:', err);
         alert('City not found. Please try again.');
         document.getElementById('cityName').textContent = 'Not Found';
     }
@@ -661,20 +669,24 @@ function showConfigBanner() {
 
 
 window.addEventListener('load', async () => {
+    console.log('🚀 Application starting...');
     await loadConfig();
+    console.log('✅ Config loaded, API_KEY:', API_KEY ? 'Present' : 'Missing');
     await ensureBackgroundVideo();
     
     // Initialize map - give DOM time to be ready
     setTimeout(() => {
-        console.log('Initializing map...');
+        console.log('🗺️ Initializing map...');
         initMap();
     }, 1000);
 
     if (!(await ensureApiKeyOrDemo())) {
+        console.error('❌ API key validation failed');
         return;
     }
 
     // default city
+    console.log('🌍 Loading default city: Kanpur');
     getWeather('Kanpur');
     fetchWeatherForOtherCities();
 });
