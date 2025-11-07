@@ -412,12 +412,30 @@ function updateMap(lat, lon) {
 async function fetchWeather(query) {
     const url = baseUrl + encodeURIComponent(query);
     console.log('Fetching weather for URL:', url);
+    
+    // Start performance monitoring if available
+    if (typeof startPerformanceMonitoring === 'function') {
+        startPerformanceMonitoring();
+    }
+    
     try {
         const result = await fetchJson(url);
         console.log('Weather API response:', result);
+        
+        // End performance monitoring if available
+        if (typeof endPerformanceMonitoring === 'function') {
+            endPerformanceMonitoring();
+        }
+        
         return result;
     } catch (err) {
         console.error('Weather API error:', err);
+        
+        // End performance monitoring even on error
+        if (typeof endPerformanceMonitoring === 'function') {
+            endPerformanceMonitoring();
+        }
+        
         throw err;
     }
 }

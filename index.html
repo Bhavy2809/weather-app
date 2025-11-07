@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="manifest" href="/manifest.json">
 
+    <!-- Three.js for 3D Earth View -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#007bff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -148,6 +152,121 @@
             filter: saturate(1.4) contrast(1.1) brightness(1.1);
         }
 
+        /* 5G Performance Indicator */
+        .performance-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 10000;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .performance-indicator.loading {
+            border-color: #ffaa00;
+            color: #ffaa00;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        .latency-value {
+            font-size: 18px;
+            font-weight: bold;
+            display: inline-block;
+            min-width: 50px;
+        }
+
+        /* 3D Earth View Container */
+        .earth-view-container {
+            position: relative;
+            height: 500px;
+            background: linear-gradient(180deg, #000428 0%, #004e92 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid #007bff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        #earth-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #earth-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Natural Language Query Box */
+        .nl-query-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .nl-query-input {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 16px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .nl-query-input:focus {
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Radar Playback Controls */
+        .radar-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .radar-control-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .radar-control-btn:hover {
+            background: #0056b3;
+            transform: scale(1.1);
+        }
+
+        .radar-timestamp {
+            color: white;
+            font-size: 12px;
+            min-width: 120px;
+            text-align: center;
+        }
+
         /* Ensure weather layers are always visible */
         .weather-overlay-always-visible {
             mix-blend-mode: screen;
@@ -187,7 +306,7 @@
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Weather App</a>
-            <button class="theme-toggle btn btn-outline-secondary me-2" type="button">
+            <button class="theme-toggle btn btn-outline-secondary me-2" type="button" onclick="toggleTheme()">
                 <i class="fas fa-moon"></i>
             </button>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -226,6 +345,30 @@
             </div>
         </div>
     </nav>
+
+    <!-- 5G Performance Indicator -->
+    <div class="performance-indicator" id="performance-indicator">
+        <div>🚀 5G eMBB Status</div>
+        <div>Latency: <span class="latency-value" id="latency-value">--</span> ms</div>
+        <div id="network-info">Network: --</div>
+    </div>
+
+    <!-- Natural Language Query -->
+    <div class="container mt-4">
+        <div class="nl-query-container">
+            <h5 style="color: white; margin-bottom: 15px;">
+                <i class="fas fa-brain"></i> Ask me anything about weather
+            </h5>
+            <div class="input-group">
+                <input type="text" class="nl-query-input" id="nl-query-input" 
+                       placeholder='Try: "What's the weather in Tokyo tomorrow?" or "Will it rain in Mumbai?"'>
+                <button class="btn btn-light ms-2" onclick="processNaturalQuery()" style="border-radius: 25px; padding: 0 25px;">
+                    <i class="fas fa-search"></i> Ask
+                </button>
+            </div>
+        </div>
+    </div>
+
     <h1 class="text-center my-4">Weather in <span id="cityName"></span></h1>
     <div class="container">
         <main>
@@ -329,7 +472,20 @@
         </div>
     </div>
 
-    <!-- Radar Map -->
+    <!-- 3D Earth View -->
+    <div class="container mt-4">
+        <h2 class="h4 mb-2">🌍 3D Earth View - Live Weather Visualization</h2>
+        <p class="small text-muted">Drag to rotate • Scroll to zoom • Click on any location to get weather</p>
+        <div class="earth-view-container">
+            <canvas id="earth-canvas"></canvas>
+            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+                <div><strong>🌡️ Temperature Layer Active</strong></div>
+                <div>Blue = Cold | Red = Hot</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Radar Map with Animation Controls -->
     <div class="container mt-4">
         <h2 class="h4 mb-2">🌍 Full-Coverage Weather Visualization Map</h2>
         <div class="alert alert-dark" style="font-size: 0.9rem; padding: 0.75rem 1rem; background-color: #2c3e50; color: white; border: none;">
@@ -350,11 +506,12 @@
         </p>
     </div>
 
-    <!-- Load Leaflet first, then our script -->
+    <!-- Load Leaflet first, then our scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
             crossorigin=""></script>
     <script src="script.js"></script>
+    <script src="advanced-features.js"></script>
 </body>
 
 </html>
