@@ -129,39 +129,58 @@
             height: 100px;
         }
         
-        /* Table Uniform Styling */
+        /* Table Uniform Styling - Dark Theme */
         .table {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-            border-color: var(--card-border) !important;
+            background-color: #1a1a1a !important;
+            color: #f8f9fa !important;
+            border-color: rgba(255,255,255,0.125) !important;
         }
         
         .table thead {
-            background-color: var(--primary-color) !important;
+            background-color: #0d6efd !important;
             color: white !important;
         }
         
         .table thead th {
-            border-color: var(--card-border) !important;
+            border-color: rgba(255,255,255,0.125) !important;
             font-weight: 600;
             padding: 12px;
         }
         
         .table tbody tr {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-            border-color: var(--card-border) !important;
+            background-color: #2d2d2d !important;
+            color: #f8f9fa !important;
+            border-color: rgba(255,255,255,0.125) !important;
+            transition: all 0.2s ease;
         }
         
         .table tbody tr:hover {
-            background-color: var(--primary-color) !important;
-            opacity: 0.8;
+            background-color: #0d6efd !important;
+            opacity: 0.9;
             color: white !important;
         }
         
         .table tbody td {
-            border-color: var(--card-border) !important;
+            border-color: rgba(255,255,255,0.125) !important;
             padding: 10px;
+        }
+        
+        /* Light theme override for tables */
+        [data-theme="light"] .table {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+            border-color: rgba(0,0,0,0.125) !important;
+        }
+        
+        [data-theme="light"] .table tbody tr {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border-color: rgba(0,0,0,0.125) !important;
+        }
+        
+        [data-theme="light"] .table thead th,
+        [data-theme="light"] .table tbody td {
+            border-color: rgba(0,0,0,0.125) !important;
         }
 
         /* Hourly forecast horizontal list */
@@ -170,15 +189,63 @@
             gap: 12px;
             overflow-x: auto;
             padding: 8px 4px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
         }
 
         .hour-card {
             min-width: 96px;
-            background: rgba(255,255,255,0.85);
+            background: #2d2d2d;
+            color: #f8f9fa;
             border-radius: 8px;
-            padding: 8px;
+            padding: 12px 8px;
             text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .hour-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+            border-color: #007bff;
+        }
+        
+        .hour-time {
+            color: #adb5bd;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .hour-temp {
+            color: #f8f9fa;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        [data-theme="light"] .hourly-container {
+            background-color: #f8f9fa;
+        }
+        
+        [data-theme="light"] .hour-card {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid rgba(0,0,0,0.125);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        [data-theme="light"] .hour-card:hover {
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        
+        [data-theme="light"] .hour-time {
+            color: #6c757d;
+        }
+        
+        [data-theme="light"] .hour-temp {
+            color: #212529;
         }
 
         /* Map size */
