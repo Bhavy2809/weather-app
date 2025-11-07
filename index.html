@@ -46,8 +46,20 @@
         }
 
         .card {
-            background-color: var(--card-bg);
+            background-color: var(--card-bg) !important;
             border-color: var(--card-border);
+            color: var(--text-color) !important;
+        }
+        
+        .card-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        .card-header {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-bottom: 1px solid var(--card-border);
         }
 
         #background-video {
@@ -357,15 +369,18 @@
     <div class="container mt-4">
         <div class="nl-query-container">
             <h5 style="color: white; margin-bottom: 15px;">
-                <i class="fas fa-brain"></i> Ask me anything about weather
+                <i class="fas fa-brain"></i> AI Weather Assistant - Ask Anything!
             </h5>
             <div class="input-group">
                 <input type="text" class="nl-query-input" id="nl-query-input" 
-                       placeholder='Try: "What's the weather in Tokyo tomorrow?" or "Will it rain in Mumbai?"'>
+                       placeholder='Try: "Can I go on a trek in Mumbai?" or "Is it good for a picnic in Delhi today?"'>
                 <button class="btn btn-light ms-2" onclick="processNaturalQuery()" style="border-radius: 25px; padding: 0 25px;">
                     <i class="fas fa-search"></i> Ask
                 </button>
             </div>
+            <p style="color: #aaa; font-size: 0.85rem; margin-top: 8px; margin-bottom: 0;">
+                💡 Examples: "Can I go trekking?", "Good for outdoor picnic?", "Beach weather today?", "Safe to travel?"
+            </p>
         </div>
     </div>
 

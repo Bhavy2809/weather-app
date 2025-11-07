@@ -187,6 +187,7 @@ function renderMainCards(result, displayName) {
     document.getElementById('cityName').textContent = displayName || `${result.location.name}, ${result.location.country}`;
     document.querySelector('#temp').textContent = result.current.temp_c;
     document.querySelector('#weather-icon').src = result.current.condition.icon;
+    document.querySelector('#weather-icon').alt = result.current.condition.text;
     document.querySelector('#cloud_pct').textContent = result.current.cloud;
     document.querySelector('#humid').textContent = result.current.humidity;
     document.querySelector('#maxt').textContent = result.forecast.forecastday[0].day.maxtemp_c;
@@ -197,6 +198,11 @@ function renderMainCards(result, displayName) {
     document.querySelector('#wind-speed').textContent = result.current.wind_kph;
     document.querySelector('#wind-degree').textContent = result.current.wind_degree;
     updateBackgroundVideo(result.current.condition.text);
+    
+    // Update 3D Earth with current weather if function exists
+    if (typeof update3DEarthWeather === 'function') {
+        update3DEarthWeather(result);
+    }
 }
 
 function renderHourlyForecast(result) {
