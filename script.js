@@ -273,67 +273,53 @@ function initMap() {
         // Initialize map with darker base for better contrast
         map = L.map('radar-map').setView([20.5937, 78.9629], 5); // Wider view of India
         
-        // Use DARK base map for maximum color contrast
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CartoDB',
-            subdomains: 'abcd',
+        // Use a clean base map without weather overlay
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
 
-        // Add country borders and labels on top for clarity
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CartoDB',
-            subdomains: 'abcd',
-            maxZoom: 19,
-            opacity: 0.7
-        }).addTo(map);
-
-        // LAYER 1: Temperature - PRIMARY LAYER (Most Important - Full Coverage)
-        // Color Scale: Purple (Cold) -> Blue -> Green -> Yellow -> Orange -> Red (Hot)
         const OPENWEATHER_API_KEY = '439d4b804bc8187953eb36d2a8c26a02';
         
+        // LAYER 1: Temperature - Only shows where there's significant temperature data
         tempLayer = L.tileLayer(`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Temperature',
-            opacity: 0.7, // High opacity for visibility
-            maxZoom: 19,
-            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' // Transparent fallback
+            opacity: 0.5, // Reduced opacity to show only strong signals
+            maxZoom: 19
         });
         tempLayer.addTo(map);
         weatherLayers.push({ name: 'Temperature', layer: tempLayer });
-        console.log('✓ Temperature layer added with full opacity');
+        console.log('✓ Temperature layer added - shows hot/cold spots');
 
-        // LAYER 2: Clouds - White overlay showing cloud coverage
-        // Intensity: Transparent (Clear) -> White (Heavy Clouds)
+        // LAYER 2: Clouds - Only shows where there are actual clouds
         cloudLayer = L.tileLayer(`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Clouds',
-            opacity: 0.5, // Moderate opacity
+            opacity: 0.4, // Light opacity - shows only where clouds exist
             maxZoom: 19
         });
         cloudLayer.addTo(map);
         weatherLayers.push({ name: 'Clouds', layer: cloudLayer });
-        console.log('✓ Clouds layer added');
+        console.log('✓ Clouds layer added - shows cloud coverage spots');
 
-        // LAYER 3: Precipitation - Shows rain/snow
-        // Color Scale: Green (Light Rain) -> Yellow (Moderate) -> Orange -> Red (Heavy Rain)
+        // LAYER 3: Precipitation - Shows ONLY where it's actively raining/snowing
         precipLayer = L.tileLayer(`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Precipitation',
-            opacity: 0.6, // Good visibility
+            opacity: 0.7, // Higher opacity for active rain areas
             maxZoom: 19
         });
         precipLayer.addTo(map);
         weatherLayers.push({ name: 'Precipitation', layer: precipLayer });
-        console.log('✓ Precipitation layer added');
+        console.log('✓ Precipitation layer added - shows active rain/snow areas');
 
-        // LAYER 4: Wind - Shows wind speed and direction
-        // Color Scale: Light Blue (Low Wind) -> Dark Blue (High Wind)
+        // LAYER 4: Wind - Shows wind patterns only in windy areas
         const windLayer = L.tileLayer(`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Wind',
-            opacity: 0.4, // Lower opacity
+            opacity: 0.3, // Very light - shows only strong wind areas
             maxZoom: 19
         });
         windLayer.addTo(map);
         weatherLayers.push({ name: 'Wind', layer: windLayer });
-        console.log('✓ Wind layer added');
+        console.log('✓ Wind layer added - shows windy spots');
         
         // LAYER 5: Radar - Live precipitation radar (when available)
         // Shows real-time precipitation with high detail
