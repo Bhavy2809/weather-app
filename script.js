@@ -3,7 +3,7 @@
 // This file is ignored by git. A sample is provided at `config.sample.json`.
 console.log('📦 script.js loaded - Weather App v2.0');
 // NOTE: The config.json file will override this fallback key
-let API_KEY = 'YOUR_RAPIDAPI_KEY_HERE'; // Fallback - will be replaced by config.json
+let API_KEY = '71c8f7cb35msh3d625ea9cc2f194p177104jsne3e4cf1850c2'; // Fallback - will be replaced by config.json
 let currentLanguage = localStorage.getItem('language') || 'en';
 let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
@@ -533,19 +533,22 @@ function resetCitiesToDefault() {
 
 const fetchWeatherForOtherCities = async () => {
     const tableBody = document.querySelector('.table tbody');
-    tableBody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading weather data...</td></tr>';
     let tableHTML = '';
+    
     for (const city of comparisonCities) {
         try {
             const result = await fetchWeather(city);
             tableHTML += `
                 <tr>
                     <th scope="row" class="text-start">${city}</th>
-                    <td>${result.current.temp_c}</td>
-                    <td>${result.current.feelslike_c}</td>
-                    <td>${result.current.humidity}</td>
-                    <td>${result.current.wind_kph}</td>
-                    <td>${result.current.condition.text}</td>
+                    <td>${result.current.temp_c}°C</td>
+                    <td>${result.current.feelslike_c}°C</td>
+                    <td>${result.current.humidity}%</td>
+                    <td>${result.current.wind_kph} km/h</td>
+                    <td><img src="${result.current.condition.icon}" width="30" alt="${result.current.condition.text}"> ${result.current.condition.text}</td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="removeCityFromComparison('${city}')">
                             <i class="fas fa-trash"></i>
@@ -553,11 +556,17 @@ const fetchWeatherForOtherCities = async () => {
                     </td>
                 </tr>`;
         } catch (error) {
-            console.error(`Could not fetch weather for ${city}`);
+            console.error(`Could not fetch weather for ${city}:`, error);
+            // Show error with retry option
             tableHTML += `
                 <tr>
                     <th scope="row" class="text-start">${city}</th>
-                    <td colspan="5" class="text-danger">Error loading data</td>
+                    <td colspan="5" class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Failed to load
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="fetchWeatherForOtherCities()">
+                            <i class="fas fa-sync"></i> Retry
+                        </button>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="removeCityFromComparison('${city}')">
                             <i class="fas fa-trash"></i>
@@ -566,6 +575,11 @@ const fetchWeatherForOtherCities = async () => {
                 </tr>`;
         }
     }
+    
+    if (tableHTML === '') {
+        tableHTML = '<tr><td colspan="7" class="text-center text-muted">No cities added. Use the input above to add cities.</td></tr>';
+    }
+    
     tableBody.innerHTML = tableHTML;
 };
 
