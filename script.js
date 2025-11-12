@@ -281,47 +281,32 @@ function initMap() {
 
         const OPENWEATHER_API_KEY = '439d4b804bc8187953eb36d2a8c26a02';
         
-        // LAYER 1: Temperature - Only shows where there's significant temperature data
-        tempLayer = L.tileLayer(`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
-            attribution: 'OpenWeatherMap - Temperature',
-            opacity: 0.5, // Reduced opacity to show only strong signals
-            maxZoom: 19
-        });
-        tempLayer.addTo(map);
-        weatherLayers.push({ name: 'Temperature', layer: tempLayer });
-        console.log('✓ Temperature layer added - shows hot/cold spots');
-
-        // LAYER 2: Clouds - Only shows where there are actual clouds
+        // Don't add temperature layer - it causes green background everywhere
+        // Temperature data is available in the clicked location details instead
+        
+        // LAYER 1: Clouds - Only shows where there are actual clouds
         cloudLayer = L.tileLayer(`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Clouds',
-            opacity: 0.4, // Light opacity - shows only where clouds exist
+            opacity: 0.5, // Visible clouds
             maxZoom: 19
         });
         cloudLayer.addTo(map);
         weatherLayers.push({ name: 'Clouds', layer: cloudLayer });
         console.log('✓ Clouds layer added - shows cloud coverage spots');
 
-        // LAYER 3: Precipitation - Shows ONLY where it's actively raining/snowing
+        // LAYER 2: Precipitation - Shows ONLY where it's actively raining/snowing
         precipLayer = L.tileLayer(`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Precipitation',
-            opacity: 0.7, // Higher opacity for active rain areas
+            opacity: 0.8, // High visibility for active rain
             maxZoom: 19
         });
         precipLayer.addTo(map);
         weatherLayers.push({ name: 'Precipitation', layer: precipLayer });
         console.log('✓ Precipitation layer added - shows active rain/snow areas');
 
-        // LAYER 4: Wind - Shows wind patterns only in windy areas
-        const windLayer = L.tileLayer(`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
-            attribution: 'OpenWeatherMap - Wind',
-            opacity: 0.3, // Very light - shows only strong wind areas
-            maxZoom: 19
-        });
-        windLayer.addTo(map);
-        weatherLayers.push({ name: 'Wind', layer: windLayer });
-        console.log('✓ Wind layer added - shows windy spots');
+        // Wind layer available but not shown by default (causes visual clutter)
         
-        // LAYER 5: Radar - Live precipitation radar (when available)
+        // LAYER 3: Radar - Live precipitation radar (when available)
         // Shows real-time precipitation with high detail
         getLatestRadarTimestamp().then(radarPath => {
             if (radarPath) {
