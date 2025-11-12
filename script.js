@@ -290,41 +290,51 @@ function initMap() {
 
         // LAYER 1: Temperature - PRIMARY LAYER (Most Important - Full Coverage)
         // Color Scale: Purple (Cold) -> Blue -> Green -> Yellow -> Orange -> Red (Hot)
-        tempLayer = L.tileLayer('https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+        const OPENWEATHER_API_KEY = '439d4b804bc8187953eb36d2a8c26a02';
+        
+        tempLayer = L.tileLayer(`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Temperature',
-            opacity: 1.0, // Maximum opacity for complete coverage
-            maxZoom: 19
+            opacity: 0.7, // High opacity for visibility
+            maxZoom: 19,
+            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' // Transparent fallback
         });
         tempLayer.addTo(map);
         weatherLayers.push({ name: 'Temperature', layer: tempLayer });
+        console.log('✓ Temperature layer added with full opacity');
 
         // LAYER 2: Clouds - White overlay showing cloud coverage
         // Intensity: Transparent (Clear) -> White (Heavy Clouds)
-        cloudLayer = L.tileLayer('https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+        cloudLayer = L.tileLayer(`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Clouds',
-            opacity: 0.6, // Moderate opacity so it doesn't hide temperature
+            opacity: 0.5, // Moderate opacity
             maxZoom: 19
         });
         cloudLayer.addTo(map);
         weatherLayers.push({ name: 'Clouds', layer: cloudLayer });
+        console.log('✓ Clouds layer added');
 
         // LAYER 3: Precipitation - Shows rain/snow
         // Color Scale: Green (Light Rain) -> Yellow (Moderate) -> Orange -> Red (Heavy Rain)
-        precipLayer = L.tileLayer('https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+        precipLayer = L.tileLayer(`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Precipitation',
-            opacity: 0.8, // High opacity for visibility
+            opacity: 0.6, // Good visibility
             maxZoom: 19
         });
         precipLayer.addTo(map);
         weatherLayers.push({ name: 'Precipitation', layer: precipLayer });
+        console.log('✓ Precipitation layer added');
 
         // LAYER 4: Wind - Shows wind speed and direction
         // Color Scale: Light Blue (Low Wind) -> Dark Blue (High Wind)
-        const windLayer = L.tileLayer('https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+        const windLayer = L.tileLayer(`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
             attribution: 'OpenWeatherMap - Wind',
-            opacity: 0.5, // Lower opacity so it doesn't overwhelm
+            opacity: 0.4, // Lower opacity
             maxZoom: 19
         });
+        windLayer.addTo(map);
+        weatherLayers.push({ name: 'Wind', layer: windLayer });
+        console.log('✓ Wind layer added');
+        
         // LAYER 5: Radar - Live precipitation radar (when available)
         // Shows real-time precipitation with high detail
         getLatestRadarTimestamp().then(radarPath => {
